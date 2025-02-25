@@ -9,19 +9,24 @@
 #include "windowsx.h"
 
 #define MAX_LOADSTRING 100
+#define MAX_COUNTER 100
+#define FRAME_DELAY 2
+#define DRAG_DELAY 30
 #pragma comment(lib,"MSIMG32.LIB")
 
 class component
 {
     public:
-        BOOL isClicked = FALSE;
-        int posX = 600, posY = 400;
-        int mouseX = 0, mouseY = 0;
-        int scale = 2;
-        WORD counter = 0;
-        WORD frame = 0;
-        int delay = 2;
-        IMAGE img;
+        BOOL isClicked = FALSE;//是否被点击
+        BOOL isDragging = FALSE;//是否被拖动
+        int posX = 600, posY = 400;//位置
+        int mouseX = 0, mouseY = 0;//鼠标位置
+        int scale = 2;//缩放倍数
+        WORD counter = 0;//计数器
+        WORD frame = 0;//当前帧
+        int delay = FRAME_DELAY;//帧切换间隔
+        WORD dragCounter = 0;//拖动计数器
+        IMAGE img;//皮肤
         component(LPCTSTR filename)
         {
             loadimage(&img, filename);
@@ -294,6 +299,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             ReleaseCapture();
             Reimu.isClicked = FALSE;
+            Reimu.isDragging = FALSE;
+            Reimu.dragCounter = 0;
         }
         break;
     case WM_RBUTTONUP:
@@ -311,7 +318,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_MOUSEMOVE:
         {
-            if (Reimu.isClicked)
+            if (Reimu.isDragging)
             {
                 int x=GET_X_LPARAM(lParam), y=GET_Y_LPARAM(lParam);
                 //lParam里是相对窗口左上角的坐标，非相对屏幕区域左上角的坐标，因此不应当提前保存初始位置
@@ -329,8 +336,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             {
                 Reimu.frame = (Reimu.frame + 1) % 2;
                 //UpdateWindow(hWnd);
-                InvalidateRect(hWnd, NULL, FALSE);
             }
+            if (Reimu.isClicked)
+            {
+                Reimu.dragCounter = (Reimu.dragCounter + 1) % DRAG_DELAY;
+                if (Reimu.dragCounter == 0)
+                {
+                    Reimu.isDragging = TRUE;
+                }
+            }
+            InvalidateRect(hWnd, NULL, FALSE);
         }
         break;
     default:
