@@ -33,12 +33,36 @@ class component
         }
 };
 
+class pet
+{
+public:
+    BOOL isClicked = FALSE;//是否被点击
+    BOOL isDragging = FALSE;//是否被拖动
+    BOOL isMoving = FALSE;//是否移动
+    BOOL isLeft = FALSE;//是否朝向左侧
+    BOOL isAction = FALSE;//是否正在动作
+    int state = STATE_NORMAL;//当前状态
+    int posX = 600, posY = 400;//位置
+    int mouseX = 0, mouseY = 0;//鼠标位置
+    int scale = 2;//缩放倍数
+    WORD counter = 0;//计数器
+    WORD frame = 0;//当前帧
+    int delay = FRAME_DELAY;//帧切换间隔
+    WORD dragCounter = 0;//拖动计数器
+    IMAGE img;//皮肤
+    pet(LPCTSTR filename)
+    {
+        loadimage(&img, filename);
+    }
+};
+
 // 全局变量:
 HINSTANCE hInst;                                // 当前实例
 WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
 IMAGE img;
 component Reimu(L"Reimu.png");
+pet TSC(L"stick.png");
 int posX=600, posY=400;
 NOTIFYICONDATA nid;
 //HWND hWnd;
