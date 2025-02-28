@@ -108,6 +108,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_WINEASYX));
 
     MSG msg;
+
+    std::srand(std::time(0));
     //loadimage(&img, L"Reimu.png");
 
     // 主消息循环:
