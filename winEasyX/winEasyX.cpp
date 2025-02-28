@@ -7,6 +7,8 @@
 #include "windows.h"
 #include "shellapi.h"
 #include "windowsx.h"
+#include "cstdlib"
+#include "ctime"
 
 #define MAX_LOADSTRING 100
 #define MAX_COUNTER 100
@@ -44,7 +46,7 @@ public:
     int state = STATE_NORMAL;//当前状态
     int posX = 600, posY = 400;//位置
     int mouseX = 0, mouseY = 0;//鼠标位置
-    int scale = 2;//缩放倍数
+    int scale = 4;//缩放倍数
     WORD counter = 0;//计数器
     WORD frame = 0;//当前帧
     int delay = FRAME_DELAY;//帧切换间隔
@@ -62,11 +64,13 @@ WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
 IMAGE img;
 component Reimu(L"Reimu.png");
-pet TSC(L"stick.png");
+pet TSC(L"sticks.png");
 int posX=600, posY=400;
 NOTIFYICONDATA nid;
 //HWND hWnd;
 HMENU trayMenu;
+
+DWORD frameOfState[] = { 18,8,8,18 };//帧数
 
 // 此代码模块中包含的函数的前向声明:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -175,7 +179,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    //loadimage(&img, L"Reimu.png");
 
    HWND hWnd = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW, szWindowClass, szTitle, WS_POPUP,
-      Reimu.posX, Reimu.posY, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, nullptr, nullptr, hInstance, nullptr);
+      TSC.posX, TSC.posY, SIZE_W * TSC.scale, SIZE_H * TSC.scale, nullptr, nullptr, hInstance, nullptr);
 
    if (!hWnd)
    {
@@ -258,17 +262,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             // TODO: 在此处添加使用 hdc 的任何绘图代码...
             // 下面使用双缓冲绘图
             HDC hdcMem = CreateCompatibleDC(hdc);
-            HBITMAP hbmMem = CreateCompatibleBitmap(hdc, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale);
+            HBITMAP hbmMem = CreateCompatibleBitmap(hdc, SIZE_W * TSC.scale, SIZE_H * TSC.scale);
             HBITMAP hbmOld = (HBITMAP)SelectObject(hdcMem, hbmMem);
 
             // 在缓冲区上绘制图片
-            StretchBlt(hdcMem, 0, 0, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, GetImageHDC(&Reimu.img),
-                Reimu.img.getwidth() * Reimu.frame / 2, 0, Reimu.img.getwidth() / 2, Reimu.img.getheight() / 2, SRCCOPY);
+            //StretchBlt(hdcMem, 0, 0, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, GetImageHDC(&Reimu.img),
+            //    Reimu.img.getwidth() * Reimu.frame / 2, 0, Reimu.img.getwidth() / 2, Reimu.img.getheight() / 2, SRCCOPY);
+            StretchBlt(hdcMem, 0, 0, SIZE_W * TSC.scale, SIZE_H * TSC.scale, GetImageHDC(&TSC.img),
+                SIZE_W * TSC.frame, TSC.state * SIZE_H, SIZE_W, SIZE_H, SRCCOPY);
             //AlphaBlend(hdcMem, 0, 0, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, GetImageHDC(&Reimu.img),
             //    Reimu.img.getwidth() * Reimu.frame / 2, 0, Reimu.img.getwidth()/2, Reimu.img.getheight()/2, { AC_SRC_OVER,0,255,AC_SRC_ALPHA });
 
             // 复制缓冲区到窗口
-            BitBlt(hdc, 0, 0, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, hdcMem, 0, 0, SRCCOPY);
+            //BitBlt(hdc, 0, 0, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, hdcMem, 0, 0, SRCCOPY);
+            BitBlt(hdc, 0, 0, SIZE_W * TSC.scale, SIZE_H * TSC.scale, hdcMem, 0, 0, SRCCOPY);
             //AlphaBlend(hdc, 0, 0, Reimu.img.getwidth() * Reimu.scale, Reimu.img.getheight() * Reimu.scale, hdcMem,
             //    0, 0, Reimu.img.getwidth() * Reimu.scale, Reimu.img.getheight() * Reimu.scale, { AC_SRC_OVER,0,255,AC_SRC_ALPHA });
 
@@ -311,20 +318,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     case WM_LBUTTONDOWN:
         {
             SetCapture(hWnd);
-            if (!Reimu.isClicked)
+            if (!TSC.isClicked)
             {
-                Reimu.mouseX = LOWORD(lParam);
-                Reimu.mouseY = HIWORD(lParam);
+                TSC.mouseX = LOWORD(lParam);
+                TSC.mouseY = HIWORD(lParam);
             }
-            Reimu.isClicked = TRUE;
+            TSC.isClicked = TRUE;
         }
         break;
     case WM_LBUTTONUP:
         {
             ReleaseCapture();
-            Reimu.isClicked = FALSE;
-            Reimu.isDragging = FALSE;
-            Reimu.dragCounter = 0;
+            if (!TSC.isDragging)
+            {
+                TSC.isAction = TRUE;
+                TSC.state = (std::rand() % 2 ? STATE_ACT1 : STATE_ACT2);
+            }
+            TSC.isClicked = FALSE;
+            TSC.isDragging = FALSE;
+            TSC.dragCounter = 0;
         }
         break;
     case WM_RBUTTONUP:
@@ -342,34 +354,54 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_MOUSEMOVE:
         {
-            if (Reimu.isDragging)
+            if (TSC.isDragging)
             {
                 int x=GET_X_LPARAM(lParam), y=GET_Y_LPARAM(lParam);
                 //lParam里是相对窗口左上角的坐标，非相对屏幕区域左上角的坐标，因此不应当提前保存初始位置
-                Reimu.posX = Reimu.posX + GET_X_LPARAM(lParam) - Reimu.mouseX;
-                Reimu.posY = Reimu.posY + GET_Y_LPARAM(lParam) - Reimu.mouseY;
-                SetWindowPos(hWnd, HWND_TOPMOST, Reimu.posX, Reimu.posY, Reimu.img.getwidth()* Reimu.scale, Reimu.img.getheight()* Reimu.scale, SWP_SHOWWINDOW);
+                TSC.posX = TSC.posX + GET_X_LPARAM(lParam) - TSC.mouseX;
+                TSC.posY = TSC.posY + GET_Y_LPARAM(lParam) - TSC.mouseY;
+                SetWindowPos(hWnd, HWND_TOPMOST, TSC.posX, TSC.posY, SIZE_W * TSC.scale, SIZE_H * TSC.scale, SWP_SHOWWINDOW);
                 //InvalidateRect(hWnd, NULL, TRUE);
             }
         }
         break;
     case WM_TIMER:
         {
-            Reimu.counter = (Reimu.counter + 1) % Reimu.delay;
-            if (Reimu.counter == 0)
+            TSC.counter = (TSC.counter + 1) % TSC.delay;
+            if (TSC.counter == 0)
             {
-                Reimu.frame = (Reimu.frame + 1) % 2;
+                //TSC.frame = (TSC.frame + 1) % frameOfState[TSC.state];
+                TSC.frame = TSC.frame + 1;
                 //UpdateWindow(hWnd);
             }
-            if (Reimu.isClicked)
+            if (TSC.isClicked)
             {
-                Reimu.dragCounter = (Reimu.dragCounter + 1) % DRAG_DELAY;
-                if (Reimu.dragCounter == 0)
+                TSC.dragCounter = (TSC.dragCounter + 1) % DRAG_DELAY;
+                if (TSC.dragCounter == 0)
                 {
-                    Reimu.isDragging = TRUE;
+                    TSC.isDragging = TRUE;
                 }
             }
+            if (TSC.isAction)
+            {
+                TSC.counter = 0;
+                TSC.frame = 0;
+                TSC.isAction = FALSE;
+            }
             InvalidateRect(hWnd, NULL, FALSE);
+            if (TSC.frame == frameOfState[TSC.state])
+            {
+                switch (TSC.state)
+                {
+                    case STATE_ACT1:
+                    case STATE_ACT2:
+                        TSC.state = STATE_NORMAL;
+                        break;
+                    default:
+                        break;
+                }
+                TSC.frame = 0;
+            }
         }
         break;
     default:
