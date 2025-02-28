@@ -9,3 +9,7 @@
 #define IS_LEFT 4
 #define SIZE_W 64
 #define SIZE_H 64
+#define WALK_SHORT 120
+#define WALK_LONG 240
+#define WALK_SPEED 5
+#define WALK_DELAY 300

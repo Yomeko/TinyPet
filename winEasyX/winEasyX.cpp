@@ -49,6 +49,8 @@ public:
     int scale = 4;//缩放倍数
     WORD counter = 0;//计数器
     WORD frame = 0;//当前帧
+    WORD walkCounter = 0;//行走计数器
+    DWORD walkDelay = 0;//行走间隔
     int delay = FRAME_DELAY;//帧切换间隔
     WORD dragCounter = 0;//拖动计数器
     IMAGE img;//皮肤
@@ -71,6 +73,9 @@ NOTIFYICONDATA nid;
 HMENU trayMenu;
 
 DWORD frameOfState[] = { 18,8,8,18 };//帧数
+
+DWORD screenWidth = 2560;
+DWORD screenHeight = 1440;
 
 // 此代码模块中包含的函数的前向声明:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
@@ -265,11 +270,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             HBITMAP hbmMem = CreateCompatibleBitmap(hdc, SIZE_W * TSC.scale, SIZE_H * TSC.scale);
             HBITMAP hbmOld = (HBITMAP)SelectObject(hdcMem, hbmMem);
 
+            int left = TSC.isLeft ? IS_LEFT : 0;
             // 在缓冲区上绘制图片
             //StretchBlt(hdcMem, 0, 0, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, GetImageHDC(&Reimu.img),
             //    Reimu.img.getwidth() * Reimu.frame / 2, 0, Reimu.img.getwidth() / 2, Reimu.img.getheight() / 2, SRCCOPY);
             StretchBlt(hdcMem, 0, 0, SIZE_W * TSC.scale, SIZE_H * TSC.scale, GetImageHDC(&TSC.img),
-                SIZE_W * TSC.frame, TSC.state * SIZE_H, SIZE_W, SIZE_H, SRCCOPY);
+                SIZE_W * TSC.frame, (TSC.state + left) * SIZE_H, SIZE_W, SIZE_H, SRCCOPY);
             //AlphaBlend(hdcMem, 0, 0, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, GetImageHDC(&Reimu.img),
             //    Reimu.img.getwidth() * Reimu.frame / 2, 0, Reimu.img.getwidth()/2, Reimu.img.getheight()/2, { AC_SRC_OVER,0,255,AC_SRC_ALPHA });
 
@@ -336,6 +342,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
             TSC.isClicked = FALSE;
             TSC.isDragging = FALSE;
+            TSC.isMoving = FALSE;
+            TSC.walkDelay = 0;
             TSC.dragCounter = 0;
         }
         break;
@@ -356,6 +364,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         {
             if (TSC.isDragging)
             {
+                if (TSC.isMoving)
+                {
+                    TSC.isMoving = FALSE;
+                    TSC.state = STATE_NORMAL;
+                }
                 int x=GET_X_LPARAM(lParam), y=GET_Y_LPARAM(lParam);
                 //lParam里是相对窗口左上角的坐标，非相对屏幕区域左上角的坐标，因此不应当提前保存初始位置
                 TSC.posX = TSC.posX + GET_X_LPARAM(lParam) - TSC.mouseX;
@@ -380,6 +393,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (TSC.dragCounter == 0)
                 {
                     TSC.isDragging = TRUE;
+                    TSC.frame = 0;
                 }
             }
             if (TSC.isAction)
@@ -387,6 +401,35 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 TSC.counter = 0;
                 TSC.frame = 0;
                 TSC.isAction = FALSE;
+            }
+            if (!TSC.isMoving)
+            {
+                TSC.walkDelay = (TSC.walkDelay + 1) % WALK_DELAY;
+                if (TSC.walkDelay == 0)
+                {
+                    TSC.isMoving = TRUE;
+                    TSC.isLeft = (std::rand() % 2 ? TRUE : FALSE);
+                    TSC.walkCounter = WALK_SHORT + (std::rand() % (WALK_LONG - WALK_SHORT));
+                    TSC.state = STATE_WALK;
+                    TSC.frame = 0;
+                }
+            }
+            else if (TSC.isMoving)
+            {
+                if (((TSC.posX < WALK_SPEED) && TSC.isLeft) || ((TSC.posX > GetSystemMetrics(SM_CXSCREEN) - SIZE_W * TSC.scale - WALK_SPEED) && !TSC.isLeft) || TSC.walkCounter == 0)
+                {
+                    TSC.isMoving = FALSE;
+                    TSC.state = STATE_NORMAL;
+                    TSC.frame = 0;
+                }
+                //if (!TSC.walkCounter)
+                //{
+                //    TSC.isMoving = FALSE;
+                //}
+                TSC.posX = TSC.posX + (TSC.isLeft ? -1 : 1) * WALK_SPEED;
+                TSC.posX = max(TSC.posX, 0);TSC.posX = min(TSC.posX, GetSystemMetrics(SM_CXSCREEN) - SIZE_W * TSC.scale);
+                SetWindowPos(hWnd, HWND_TOPMOST, TSC.posX, TSC.posY, SIZE_W * TSC.scale, SIZE_H * TSC.scale, SWP_SHOWWINDOW);
+                TSC.walkCounter--;
             }
             InvalidateRect(hWnd, NULL, FALSE);
             if (TSC.frame == frameOfState[TSC.state])
