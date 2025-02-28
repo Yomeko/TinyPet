@@ -15,4 +15,4 @@
 素材来源:
 
 - 测试用灵梦[Touhou Characters@spriter recource](https://www.spriters-resource.com/pc_computer/touhoupuppetdanceperformancetouhoumon/sheet/100669/)
-- (待替换)TSC stick figure by [IncinaNeverDies@deviantart](https://www.deviantart.com/incinaneverdies/art/The-Second-Coming-Alan-Becker-Sprite-Sheet-1162005369)
+- TSC stick figure by [IncinaNeverDies@deviantart](https://www.deviantart.com/incinaneverdies/art/The-Second-Coming-Alan-Becker-Sprite-Sheet-1162005369)
