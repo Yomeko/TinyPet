@@ -1,4 +1,4 @@
-# winEasyX
+# TinyPet
 
 只是一个最简单的桌面宠物的cpp style实现，使用了EasyX的IMAGE类来加载png，其余部分均使用win32 api，目前功能包括:
 
