@@ -16,25 +16,6 @@
 #define DRAG_DELAY 30
 #pragma comment(lib,"MSIMG32.LIB")
 
-class component
-{
-    public:
-        BOOL isClicked = FALSE;//是否被点击
-        BOOL isDragging = FALSE;//是否被拖动
-        int posX = 600, posY = 400;//位置
-        int mouseX = 0, mouseY = 0;//鼠标位置
-        int scale = 2;//缩放倍数
-        WORD counter = 0;//计数器
-        WORD frame = 0;//当前帧
-        int delay = FRAME_DELAY;//帧切换间隔
-        WORD dragCounter = 0;//拖动计数器
-        IMAGE img;//皮肤
-        component(LPCTSTR filename)
-        {
-            loadimage(&img, filename);
-        }
-};
-
 class pet
 {
 public:
@@ -65,7 +46,6 @@ HINSTANCE hInst;                                // 当前实例
 WCHAR szTitle[MAX_LOADSTRING];                  // 标题栏文本
 WCHAR szWindowClass[MAX_LOADSTRING];            // 主窗口类名
 IMAGE img;
-component Reimu(L"Reimu.png");
 pet TSC(L"sticks.png");
 int posX=600, posY=400;
 NOTIFYICONDATA nid;
@@ -110,16 +90,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MSG msg;
 
     std::srand(std::time(0));
-    //loadimage(&img, L"Reimu.png");
 
     // 主消息循环:
     while (1)
     {
-        //Reimu.counter = (Reimu.counter + 1) % Reimu.delay;
-        //if (Reimu.counter == 0)
-        //{
-        //    Reimu.frame = (Reimu.frame + 1) % 2;
-        //}
         while(PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
             if (msg.message == WM_QUIT)
@@ -135,7 +109,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         }
     }
 
-    //DestroyMenu(trayMenu);
 
     return (int) msg.wParam;
 }
@@ -160,9 +133,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
     wcex.hInstance      = hInstance;
     wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_STICK));
     wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    //wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
     wcex.hbrBackground = (HBRUSH)GetStockBrush(HOLLOW_BRUSH);
-    //wcex.hbrBackground = CreateSolidBrush(RGB(100, 100, 100));
     wcex.lpszMenuName = nullptr;// MAKEINTRESOURCEW(IDC_WINEASYX);
     wcex.lpszClassName  = szWindowClass;
     wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_STICK));
@@ -183,7 +154,6 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
    hInst = hInstance; // 将实例句柄存储在全局变量中
-   //loadimage(&img, L"Reimu.png");
 
    HWND hWnd = CreateWindowExW(WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TOOLWINDOW, szWindowClass, szTitle, WS_POPUP,
       TSC.posX, TSC.posY, SIZE_W * TSC.scale, SIZE_H * TSC.scale, nullptr, nullptr, hInstance, nullptr);
@@ -209,9 +179,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    AppendMenu(trayMenu, MF_STRING, IDM_ABOUT, L"关于");
    AppendMenu(trayMenu, MF_STRING, IDM_EXIT, L"退出");
 
-   //SetLayeredWindowAttributes(hWnd, RGB(255,255,255), 0, LWA_COLORKEY);
    SetLayeredWindowAttributes(hWnd, RGB(0, 255, 0), 0, LWA_COLORKEY);
-   //SetLayeredWindowAttributes(hWnd, RGB(100, 100, 100), 0, LWA_COLORKEY);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 
@@ -232,8 +200,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    //IMAGE img;
-    //loadimage(&img, L"Reimu.png");
     HWND hDlg;
     switch (message)
     {
@@ -258,10 +224,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             }
         }
         break;
-    case WM_CREATE:
-        {
-            //initgraph(600, 400);
-        }
     case WM_PAINT:
         {
             PAINTSTRUCT ps;
@@ -274,18 +236,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
             int left = TSC.isLeft ? IS_LEFT : 0;
             // 在缓冲区上绘制图片
-            //StretchBlt(hdcMem, 0, 0, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, GetImageHDC(&Reimu.img),
-            //    Reimu.img.getwidth() * Reimu.frame / 2, 0, Reimu.img.getwidth() / 2, Reimu.img.getheight() / 2, SRCCOPY);
             StretchBlt(hdcMem, 0, 0, SIZE_W * TSC.scale, SIZE_H * TSC.scale, GetImageHDC(&TSC.img),
                 SIZE_W * TSC.frame, (TSC.state + left) * SIZE_H, SIZE_W, SIZE_H, SRCCOPY);
-            //AlphaBlend(hdcMem, 0, 0, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, GetImageHDC(&Reimu.img),
-            //    Reimu.img.getwidth() * Reimu.frame / 2, 0, Reimu.img.getwidth()/2, Reimu.img.getheight()/2, { AC_SRC_OVER,0,255,AC_SRC_ALPHA });
 
             // 复制缓冲区到窗口
-            //BitBlt(hdc, 0, 0, Reimu.img.getwidth()*Reimu.scale, Reimu.img.getheight()*Reimu.scale, hdcMem, 0, 0, SRCCOPY);
             BitBlt(hdc, 0, 0, SIZE_W * TSC.scale, SIZE_H * TSC.scale, hdcMem, 0, 0, SRCCOPY);
-            //AlphaBlend(hdc, 0, 0, Reimu.img.getwidth() * Reimu.scale, Reimu.img.getheight() * Reimu.scale, hdcMem,
-            //    0, 0, Reimu.img.getwidth() * Reimu.scale, Reimu.img.getheight() * Reimu.scale, { AC_SRC_OVER,0,255,AC_SRC_ALPHA });
 
             // 释放资源
             SelectObject(hdcMem, hbmOld);
@@ -296,7 +251,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_DESTROY:
         {
-            //closegraph();
             KillTimer(hWnd, 1); // 销毁定时器
             DestroyMenu(trayMenu);
             PostQuitMessage(0);
@@ -312,12 +266,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     // 显示右键菜单
                     POINT pt;
                     GetCursorPos(&pt);
-                    //HMENU hMenu = CreatePopupMenu();
-                    //AppendMenu(hMenu, MF_STRING, IDM_ABOUT, L"关于");
-                    //AppendMenu(hMenu, MF_STRING, IDM_EXIT, L"退出");
                     SetForegroundWindow(hWnd);
                     TrackPopupMenu(trayMenu, TPM_LEFTALIGN | TPM_BOTTOMALIGN, pt.x, pt.y, 0, hWnd, NULL);
-                    //DestroyMenu(hMenu);
                 }
                 break;
             }
@@ -354,12 +304,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             // 显示右键菜单
             POINT pt;
             GetCursorPos(&pt);
-            //HMENU hMenu = CreatePopupMenu();
-            //AppendMenu(hMenu, MF_STRING, IDM_ABOUT, L"关于");
-            //AppendMenu(hMenu, MF_STRING, IDM_EXIT, L"退出");
             SetForegroundWindow(hWnd);
             TrackPopupMenu(trayMenu, TPM_LEFTALIGN | TPM_BOTTOMALIGN, pt.x, pt.y, 0, hWnd, NULL);
-            //DestroyMenu(hMenu);
         }
         break;
     case WM_MOUSEMOVE:
@@ -424,10 +370,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                     TSC.state = STATE_NORMAL;
                     TSC.frame = 0;
                 }
-                //if (!TSC.walkCounter)
-                //{
-                //    TSC.isMoving = FALSE;
-                //}
                 TSC.posX = TSC.posX + (TSC.isLeft ? -1 : 1) * WALK_SPEED;
                 TSC.posX = max(TSC.posX, 0);TSC.posX = min(TSC.posX, GetSystemMetrics(SM_CXSCREEN) - SIZE_W * TSC.scale);
                 SetWindowPos(hWnd, HWND_TOPMOST, TSC.posX, TSC.posY, SIZE_W * TSC.scale, SIZE_H * TSC.scale, SWP_SHOWWINDOW);
